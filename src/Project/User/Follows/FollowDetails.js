@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import * as userClient from "../client";
 import * as fClient from './followClient';
 import axios from 'axios';
 axios.defaults.withCredentials = true;
 
 function FollowDetails() {
   const { profileId } = useParams();
-  const { currentUser } = useSelector((state) => state.userReducer);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  const auth = () => {
-    if(!currentUser) {
-      alert("Please login to see user's follows/followers.")
-      navigate("/User/Signin");
+  const fetchUser = async () => {
+    try {
+        const u = await userClient.findUserById(profileId);
+        setUser(u);
+    } catch (error) {
+        console.error(error);
     }
   }
 
@@ -40,10 +43,10 @@ function FollowDetails() {
   }
 
   useEffect(() => {
+    fetchUser();
     fetchFollowers();
     fetchFollows();
-    auth();
-}, [profileId])
+  }, [profileId])
 
   return (
     <div className="container-fluid">

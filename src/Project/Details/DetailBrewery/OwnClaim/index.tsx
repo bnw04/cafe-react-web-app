@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import { ProjectState } from "../../../store";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
-import * as client from "./client";
+import * as client from "./claimClient";
 
 export default function OwnerClaim() {
 
@@ -11,7 +11,7 @@ export default function OwnerClaim() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [brew, setBrew] = useState({id: "", name: "", website_url: ""});
-  const [claim, setClaim] = useState({owner: "", brewery_ref: detailId, legalName: "", additional: "", completed: false});
+  const [claim, setClaim] = useState({owner: "", brewery_ref: detailId, brewery_name: "", legalName: "", additional: "", completed: false, approved: false});
 
   const submit = async () => {
     try {
@@ -31,19 +31,17 @@ export default function OwnerClaim() {
       const data = await response.json();
       if (!data) {
         navigate("/Search")
-      }
-      if (!currentUser || currentUser.role !== "OWNER") {
-        navigate("/Search")
         return;
       }
       setBrew(data);
+      setClaim(c => ({...c, brewery_name: data.name}));
     };
 
     const update = async () => {
       if (currentUser) {
         setClaim({...claim, owner: currentUser._id})
-        const claims = await client.findPendingClaims(currentUser._id);
-        if (claims.length > 0) {
+        const c = await client.findPendingClaim(currentUser._id);
+        if (c) {
           alert("You have a pending request, resubmit when it's completed")
           navigate("/Search")
           return;

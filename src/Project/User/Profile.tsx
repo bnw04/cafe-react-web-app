@@ -115,14 +115,19 @@ export default function Profile() {
     <div className="container-fluid">
       
       {isAdmin && 
-        <Link to="/User/Admin/Users" className="btn bg-warning-subtle w-100 mb-2">
+      <>
+        <Link to={`/User/Admin/${profile._id}/Users`} className="btn bg-warning-subtle w-100 mb-2">
           Users
         </Link>
+        <Link to={`/User/Admin/${profile._id}/Review`} className="btn bg-success-subtle w-100 mb-2">
+          Review Owner's Claims
+        </Link>
+      </>
       }
 
       {isOwner && 
-        <Link to="/User/Owner/Claims" className="btn bg-warning-subtle w-100 mb-2">
-          Owner's Claim request
+        <Link to={`/User/Owner/${profile._id}/Claims`} className="btn bg-warning-subtle w-100 mb-2">
+          Owner's Claim Request
         </Link>
       }
 

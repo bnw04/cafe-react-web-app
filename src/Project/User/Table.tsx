@@ -3,8 +3,11 @@ import * as client from "./client";
 import { User } from "./client";
 import { BsFillCheckCircleFill, BsPencil,
   BsTrash3Fill, BsPlusCircleFill } from "react-icons/bs";
+import { useNavigate, useParams } from "react-router";
 
 export default function UserTable() {
+  const { adminId } = useParams();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User>({
     _id: "", username: "", password: "", firstName: "", lastName: "", email: "", role: "USER" });
@@ -42,7 +45,7 @@ export default function UserTable() {
   const updateUser = async () => {
     try {
       if (!user._id) {
-        throw new Error("select an user to update first")
+        throw new Error("first, select an user to update")
       }
       const status = await client.adminUpdateUser(user._id, user);
       setUsers(users.map((u) =>
@@ -69,21 +72,30 @@ export default function UserTable() {
     const users = await client.findAllUsers();
     setUsers(users);
   };
+
   useEffect(() => { fetchUsers(); }, []);
 
   return (
     <div className="container-fluid">
-      <select
-        onChange={(e) => fetchUsersByRole(e.target.value)}
-        value={role || "USER"}
-        className="form-select w-25 float-end mt-2">
-        <option value="USER">User</option>
-        <option value="ADMIN">Admin</option>
-        <option value="OWNER">Owner</option>
-      </select>
+      <div className="row">
 
-      <h1>User Table</h1>
-      <table className="table">
+        <div className="col">
+          <h1>User Table</h1>
+        </div>
+        <div className="col">
+          <select
+            onChange={(e) => fetchUsersByRole(e.target.value)}
+            value={role || "USER"}
+            className="form-select w-25 float-end mt-2">
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+            <option value="OWNER">Owner</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-responsive-sm">
+      <table className="table table-striped">
         <thead>
           <tr>
             <th>Username</th>
@@ -96,7 +108,7 @@ export default function UserTable() {
           </tr>
           <tr>
             <td>
-            <input value={user.username} className="me-2" onChange={(e) =>
+            <input value={user.username} className="me-2 mb-2" onChange={(e) =>
                 setUser({ ...user, username: e.target.value })}
                 placeholder="username"/>
             <input value={user.password} type="password" onChange={(e) =>
@@ -149,6 +161,7 @@ export default function UserTable() {
             </tr>))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

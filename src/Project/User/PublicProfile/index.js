@@ -18,12 +18,16 @@ export default function PublicProfile() {
 
   const fetchFollows = async () => {
     try {
+      if (currentUser) {
       const fos = await fClient.findFollowsOfAUser(currentUser._id);
       const follows = await fClient.followsNumber(profileId);
       const followers = await fClient.followersNumber(profileId);
       setFoNumber(follows)
       setFerNumber(followers)
       setFollows(fos);
+    } else {
+      navigate("/User/Profile")
+    }
     } catch (err) {
       navigate("/User/Profile")
     }
@@ -31,7 +35,7 @@ export default function PublicProfile() {
 
   const fetchUser = async () => {
     try {
-      if (profileId === currentUser._id) {
+      if (currentUser && profileId === currentUser._id) {
         navigate("/User/Profile");
         return;
       }
