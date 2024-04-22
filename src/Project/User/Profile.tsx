@@ -116,10 +116,10 @@ export default function Profile() {
       
       {isAdmin && 
       <>
-        <Link to={`/User/Admin/${profile._id}/Users`} className="btn bg-warning-subtle w-100 mb-2">
+        <Link to={"/User/Admin/Users"} className="btn bg-warning-subtle w-100 mb-2">
           Users
         </Link>
-        <Link to={`/User/Admin/${profile._id}/Review`} className="btn bg-success-subtle w-100 mb-2">
+        <Link to={"/User/Admin/Review"} className="btn bg-success-subtle w-100 mb-2">
           Review Owner's Claims
         </Link>
       </>

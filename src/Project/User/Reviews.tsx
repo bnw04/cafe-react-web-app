@@ -6,7 +6,6 @@ import { BsFillCheckCircleFill, BsPencil } from "react-icons/bs";
 import { Link } from "react-router-dom";
 
 export default function Reviews() {
-  const { adminId } = useParams();
   const [completed, setCompleted] = useState<Claim[] | null>(null);
   const [pending, setPending] = useState<Claim[] | null>(null);
   const [cur, setCur] = useState<Claim>({_id: "", brewery_name: "Select Request First", legalName: "Select Request First", 

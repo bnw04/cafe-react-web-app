@@ -6,7 +6,6 @@ import { BsFillCheckCircleFill, BsPencil,
 import { useNavigate, useParams } from "react-router";
 
 export default function UserTable() {
-  const { adminId } = useParams();
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User>({
@@ -106,7 +105,7 @@ export default function UserTable() {
             <th>&nbsp;</th>
 
           </tr>
-          <tr>
+          <tr className="align-middle">
             <td>
             <input value={user.username} className="me-2 mb-2" onChange={(e) =>
                 setUser({ ...user, username: e.target.value })}
@@ -144,14 +143,14 @@ export default function UserTable() {
         </thead>
         <tbody>
           {users.map((user: any) => (
-            <tr key={user._id}>
+            <tr key={user._id} className="align-middle">
               <td>{user.username}</td>
               <td>{user.firstName}</td>
               <td>{user.lastName}</td>
               <td>{user.email}</td>
               <td>{user.role}</td>
               <td>
-                <button className="btn btn-danger me-2" onClick={() => deleteUser(user)}>
+                <button className="btn btn-danger me-2 mb-1" onClick={() => deleteUser(user)}>
                   <BsTrash3Fill />
                 </button>
                 <button className="btn btn-warning me-2" onClick={() => selectUser(user)}>

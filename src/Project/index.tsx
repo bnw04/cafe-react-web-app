@@ -38,8 +38,8 @@ function Project() {
                       <Route path="User/Profile/:profileId" element={<PublicProfile />} />
                       <Route path="User/Profile/:profileId/follows" element={<FollowDetails />} />
                       <Route path="User/Owner/:ownerId/Claims" element={<Claims />} />
-                      <Route path="User/Admin/:adminId/Users" element={<UserTable />} />
-                      <Route path="User/Admin/:adminId/Review" element={<Reviews />} />
+                      <Route path="User/Admin/Users" element={<UserTable />} />
+                      <Route path="User/Admin/Review" element={<Reviews />} />
                       <Route path="Details/:detailId/claim" element={<OwnerClaim />} />
                   </Routes>
               </div>
