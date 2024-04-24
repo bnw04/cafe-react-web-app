@@ -67,3 +67,18 @@ export const findBrewForOwner = async (usr : User) => {
     return response.data;
 };
 
+export const findUserFromFollowers = async (brId : any, userId: String) => {
+    const response = await axios.get(`${ADMIN_API}/breweries/${brId}/follow/${userId}`);
+    return response.data;
+};
+
+export const findUserFromLikers = async (brId : any, userId: String) => {
+    const response = await axios.get(`${ADMIN_API}/breweries/${brId}/like/${userId}`);
+    return response.data;
+};
+
+
+
+
+
+

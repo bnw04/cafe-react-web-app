@@ -47,35 +47,47 @@ function Home() {
     setLRanks(likeRankings)
   }
 
-  const updateLikes = (brew : any) =>{
+  const [selectedId, setSelectedId] = useState('')
+  const updateLikes = async (brew : any) =>{
     if (!currentUser) {
       alert('You are not authorized, please Sign In/Up!')
       return
+    } 
+    const index = await admin.findUserFromLikers(brew._id, currentUser._id)
+    if (index) {
+      alert('you already liked')
+    } else {
+      const newBrew = {...brew, likeCount : brew.likeCount + 1, likers : [...brew.likers, currentUser]};
+      setSelectedId(newBrew._id);
+      const newBrews = brews.map((i:any)=> i._id === brew._id? newBrew : i);
+      admin.updateBrew(brew._id, newBrew).then((status) => setBrews(newBrews));
+
     }
-    const newBrew = {...brew, likes : brew.likes + 1};
-    const newBrews = limitedBrews.map((i:any)=> i._id === brew._id? newBrew : i);
-    admin.updateBrew(brew._id, newBrew).then((status) => setLimits(newBrews));
   }
   
-  const updateFollowers = (brew : any) => {
+  const updateFollowers = async (brew : any) => {
     if (!currentUser) {
       alert('You are not authorized, please Sign In/Up!')
       return
     }
-    const newBrew = {...brew, followers : brew.followers + 1};
-    const newBrews = limitedBrews.map((i:any)=> i._id === brew._id? newBrew : i);
-    admin.updateBrew(brew._id, newBrew).then((status) => setLimits(newBrews));
+    const index = await admin.findUserFromFollowers(brew._id, currentUser._id)
+    if (index) {
+      alert('You are already a follower!')
+    } else {
+      const newBrew = {...brew, followers : [...brew.followers, currentUser], followCount : brew.followCount + 1};
+      const newBrews = brews.map((i:any)=> i._id === brew._id? newBrew : i);
+      admin.updateBrew(brew._id, newBrew).then((status) => setBrews(newBrews));
+    }
   }
   
   const [review, setReview] = useState({userId : "", comments: ""})
   const [currentID, setCurrent] = useState(" ")
-
   const updateReviews = async (brew: any, currentComment : any) =>{
     const reviewedBrew = brews.find((i :any) => i._id === brew._id)
     const newReview = [...reviewedBrew.reviews, currentComment]
     const newBrew = {...brew, reviews : newReview}
-    const newBrews = limitedBrews.map((i:any)=> i._id === brew._id? newBrew : i);
-    admin.updateBrew(brew._id, newBrew).then((status) => setLimits(newBrews));
+    const newBrews = brews.map((i:any)=> i._id === brew._id? newBrew : i);
+    admin.updateBrew(brew._id, newBrew).then((status) => setBrews(newBrews));
     setCurrent(" ")
   }
 
@@ -116,16 +128,13 @@ function Home() {
 
   // not done !!!!!!
   const findAllStores = () => {
-
   }
 
   const ownerPage = async () => {
     if (currentUser && currentUser.role === "OWNER") {
       try {
         const ownerCls = await admin.findBrewForOwner(currentUser);
-        console.log(ownerCls)
-        const ownerBr = ownerCls.filter((brewery: any) => brewery.completed && brewery.approved);
-        console.log(ownerBr)        
+        const ownerBr = ownerCls.filter((brewery: any) => brewery.completed && brewery.approved);     
         if (ownerBr.length > 0) { 
           const updatedBreweries = ownerBr.map((brewery: any) => ({
             ...brewery,
@@ -138,6 +147,7 @@ function Home() {
       }
     }
   }
+
   
   useEffect(() => {
     setLimits(brews.slice(page * 10 , page * 10 + 10))
@@ -158,10 +168,10 @@ function Home() {
               className="border rounded-4 p-2 me-3"
               onChange={(e) => searchBrew(e.target.value)}/>   
           <button onClick={() => ownerPage()}
-            className={currentUser && currentUser.role === "OWNER"? "btn btn-primary form-control me-2" : "d-none"}
+            className={currentUser && currentUser.role === "OWNER"? "btn btn-info form-control me-2 " : "d-none"}
             type="button">My Brewery </button>
           <button onClick={() => findNeighbors()}
-            className={currentUser && currentUser.role === "OWNER"? "btn btn-info form-control me-2 " : "d-none"}
+            className={currentUser && currentUser.role === "OWNER"? "btn btn-danger form-control me-2" : "d-none"}
             type="button">Neighborhood </button>
           <button onClick={() => findAllStores()}
             className={currentUser && currentUser.role === "OWNER"? "btn btn-warning form-control  me-2 " : "d-none"}
@@ -198,7 +208,8 @@ function Home() {
     <div className='d-flex mx-4'>
       <ul className="list-group rounded-5 col-2 "> 
           {likeBrews && likeBrews.map((rank: any, index) => ( 
-          <li key= {index} className="list-group-item d-flex row" >
+          <li key= {index} 
+              className={selectedId === rank._id? "list-group-item d-flex row border-primary border-3" : "list-group-item d-flex row"} >
               <div className=' col-3 text-danger fs-2'>
                 {index +1}  
               </div>
@@ -209,7 +220,7 @@ function Home() {
                 </div>
                 <div className='col text-danger'>
                   <FaRocket className= "me-3 text-danger "/>
-                      Likes : {rank.likes}
+                      Likes : {rank.likeCount}
                 </div>
               </div>
                 
@@ -221,7 +232,7 @@ function Home() {
           {limitedBrews && limitedBrews.map((br: any, index : number) => 
           ( 
             <li 
-              className={br.name.includes('Owner')? "list-group-item border-danger border-3" : "list-group-item border-2"} >
+              className={br.name.includes('Owner')? "list-group-item border-info border-4" : "list-group-item border-2"} >
                 <div className='row d-flex flex-grow-1'>
                   <div 
                     className={br.name.includes('Owner')? "col-3 text-primary fs-5 text-danger" : "col-3 text-primary fs-5"} >
@@ -247,16 +258,20 @@ function Home() {
                   <div className='col-2'>
                           <button onClick={() => updateLikes(br)}
                               className= "mb-2 btn btn-sm btn-warning form-control">
-                                <FaStar/> like : {br.likes} 
+                                <FaStar/> like : {br.likeCount} 
                             </button> <br></br>
                             <button onClick={() => updateFollowers(br)}
                               className= "btn btn-sm btn-primary form-control">
-                                <FaPeopleArrows/> follow : {br.followers}
+                                <FaPeopleArrows/> follow : {br.followCount}
                             </button>
                             <button onClick={() => setCurrent(br._id)}
                               className={currentUser && !br.name.includes('Owner')? "btn btn-sm btn-secondary float-end my-2" : "d-none"}>
                                 Add Comment
                             </button>
+                            <Link to = {`../User/Profile`}
+                              className={currentUser && br.name.includes('Owner')? "btn btn-info float-end my-2" : "d-none"}>
+                                Manage Profile
+                            </Link>
                             <textarea placeholder='add comments....' value={review.comments} 
                               className={br._id == currentID? "border form-control" : "d-none"}
                               onChange={(e) => setReview({userId : currentUser._id, comments: e.target.value})}
