@@ -17,6 +17,7 @@ import FollowDetails from './User/Follows/FollowDetails';
 import OwnerClaim from './Details/DetailBrewery/OwnClaim';
 import Claims from './User/Claims';
 import Reviews from './User/Reviews';
+import UsrHome from './Home/user';
 
 function Project() {
 
@@ -28,7 +29,8 @@ function Project() {
               <div className='flex-grow-1 mt-5 pt-5' >
                   <Routes>
                       <Route path="/" element={<Navigate to="Home" />} />
-                      <Route path="Home" element={<Home />} />
+                      <Route path="Home/*" element={<Home />} />
+                      <Route path="Home/User/:userID" element={<UsrHome/>} />
                       <Route path="Search" element={<Search />} />
                       <Route path="Details" element={<Details />} />
                       <Route path="Details/:detailId" element={<DetailBrewery />} />

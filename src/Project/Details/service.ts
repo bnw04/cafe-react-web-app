@@ -28,5 +28,18 @@ export const getAllBreweries = async () => {
 }
 
 
+export const getBreweryFromAPIs = async (ids : any[], usrId : any) => {
+  const brs = []
+  const uniqueArray = Array.from(new Set(ids));
+  for (const i of uniqueArray) {
+    const response = await axios.get(`${BREW_API}/${i}/${usrId}`)
+    if (response) {
+      brs.push(response.data)
+    }
+  }
+  return brs;
+}
+
+
 
 

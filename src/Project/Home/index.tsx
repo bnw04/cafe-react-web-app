@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import * as admin from './home';
+import * as service from '../Details/service';
 import {FaEarlybirds, FaPeopleArrows, FaRocket, FaSmile, FaStar,} from "react-icons/fa";
 import { useSelector } from 'react-redux';
 import { ProjectState } from '../store';
 import * as client from "../User/client";
 import axios from "axios";
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaDeleteLeft } from 'react-icons/fa6';
 axios.defaults.withCredentials = true;
 
 
 function Home() {
+  const {pathname} = useLocation()
   const [brews, setBrews] = useState<any[]>([]);
   const [brew, setBrew] = useState({ _id: "", name : ""});
   const [likeBrews, setLRanks] = useState([]);
@@ -17,6 +20,7 @@ function Home() {
   const [page, setPage] = useState(-1)
   const {currentUser} = useSelector((state: ProjectState) => state.userReducer)
   const [users, setUsers] = useState<any[]>([]);
+  const navigate = useNavigate()
   
   
   const fetchBrews = async () => {
@@ -47,7 +51,7 @@ function Home() {
     setLRanks(likeRankings)
   }
 
-  const [selectedId, setSelectedId] = useState('')
+  // const [selectedId, setSelectedId] = useState('')
   const updateLikes = async (brew : any) =>{
     if (!currentUser) {
       alert('You are not authorized, please Sign In/Up!')
@@ -58,7 +62,7 @@ function Home() {
       alert('you already liked')
     } else {
       const newBrew = {...brew, likeCount : brew.likeCount + 1, likers : [...brew.likers, currentUser]};
-      setSelectedId(newBrew._id);
+      // setSelectedId(newBrew._id);
       const newBrews = brews.map((i:any)=> i._id === brew._id? newBrew : i);
       admin.updateBrew(brew._id, newBrew).then((status) => setBrews(newBrews));
 
@@ -126,29 +130,48 @@ function Home() {
     
   }
 
-  // not done !!!!!!
-  const findAllStores = () => {
+  const handleDeleteBrew = (bid: any) =>{
+    const rest = brews.filter((m) => m._id !== bid)
+    admin.deleteBrew(bid).then((status) => setBrews(rest));
   }
 
-  const ownerPage = async () => {
+ 
+  const [ownerBrews, setOwnerBrews] = useState<any[]>([])
+  const addOwnerBrews = async () => {
     if (currentUser && currentUser.role === "OWNER") {
       try {
         const ownerCls = await admin.findBrewForOwner(currentUser);
-        const ownerBr = ownerCls.filter((brewery: any) => brewery.completed && brewery.approved);     
-        if (ownerBr.length > 0) { 
-          const updatedBreweries = ownerBr.map((brewery: any) => ({
-            ...brewery,
-            name: `${brewery.brewery_name} -- Owner`  
-                    }));
-          setLimits([... updatedBreweries, ...brews]) }
-        
+        const ownerIds = ownerCls.filter((brewery: any) => brewery.completed && brewery.approved).map((i : any) => i.brewery_ref);     
+        // owner automatically like and follow his/her own brewery
+        const importBrews = await service.getBreweryFromAPIs(ownerIds, currentUser._id);
+        setOwnerBrews([...importBrews])
       } catch (error: any) {
         console.error(error.response.data);
       }
     }
   }
-
   
+  const highLightOwner  = () => {
+    if (ownerBrews.length > 0) {
+      const updatedBrews = ownerBrews.map((brew : any) => ({ ...brew,  name: `${brew.name} -- Owner`})) 
+      setLimits([...updatedBrews, ...limitedBrews])
+    }
+  }
+
+  const checkComment = (id : any) => {
+    if (!currentUser) {
+      alert('you need to sign in')
+      navigate(`/User/Profile/${id}`)
+    } else {
+      navigate(`/User/Profile/${id}`)
+    }
+  }
+  
+  useEffect(() => {
+    addOwnerBrews()
+  }, [currentUser]);
+
+
   useEffect(() => {
     setLimits(brews.slice(page * 10 , page * 10 + 10))
   }, [page, brews]);
@@ -167,18 +190,20 @@ function Home() {
           <input placeholder="search brewery name...." defaultValue={brew.name}
               className="border rounded-4 p-2 me-3"
               onChange={(e) => searchBrew(e.target.value)}/>   
-          <button onClick={() => ownerPage()}
+          <button onClick={() => highLightOwner()}
             className={currentUser && currentUser.role === "OWNER"? "btn btn-info form-control me-2 " : "d-none"}
-            type="button">My Brewery </button>
+            type="button">My Breweries </button>
           <button onClick={() => findNeighbors()}
             className={currentUser && currentUser.role === "OWNER"? "btn btn-danger form-control me-2" : "d-none"}
             type="button">Neighborhood </button>
-          <button onClick={() => findAllStores()}
-            className={currentUser && currentUser.role === "OWNER"? "btn btn-warning form-control  me-2 " : "d-none"}
-            type="button">Stores </button> 
-          <button 
-            className={currentUser && currentUser.role === "ADMIN"? "btn btn-secondary me-2 " : "d-none"}
-            type="button">Settings </button>
+          <Link to ={`./Edit`}
+            className={currentUser && currentUser.role === "ADMIN"? "btn btn-secondary me-2 " : "d-none"} >
+              Settings </Link>
+
+          <Link to ={`./`}
+              className={pathname.includes(`Edit`)? "btn btn-warning me-2 " : "d-none"}>
+              Publish </Link>
+
           <button className="dropdown btn btn-success me-2 dropdown-toggle" type="button"
                   id="dd" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Views 
@@ -209,7 +234,8 @@ function Home() {
       <ul className="list-group rounded-5 col-2 "> 
           {likeBrews && likeBrews.map((rank: any, index) => ( 
           <li key= {index} 
-              className={selectedId === rank._id? "list-group-item d-flex row border-primary border-3" : "list-group-item d-flex row"} >
+              // className={selectedId === rank._id? "list-group-item d-flex row border-primary border-3" : "list-group-item d-flex row"} >
+              className={ "list-group-item d-flex row"} >
               <div className=' col-3 text-danger fs-2'>
                 {index +1}  
               </div>
@@ -236,7 +262,10 @@ function Home() {
                 <div className='row d-flex flex-grow-1'>
                   <div 
                     className={br.name.includes('Owner')? "col-3 text-primary fs-5 text-danger" : "col-3 text-primary fs-5"} >
-                      <FaEarlybirds/> Brewery <br></br>{br.name} 
+                      <FaEarlybirds/> Brewery 
+                      <button onClick={() => handleDeleteBrew(br._id)} className={ pathname.includes('Edit')? 'btn btn-light btn-sm fs-2 text-danger': 'd-none'}
+                         ><FaDeleteLeft /> </button>  
+                      <br></br>{br.name} 
                   </div>
                   <div className='col-1 text-success'>
                       Type : {br.brewery_type}
@@ -268,9 +297,9 @@ function Home() {
                               className={currentUser && !br.name.includes('Owner')? "btn btn-sm btn-secondary float-end my-2" : "d-none"}>
                                 Add Comment
                             </button>
-                            <Link to = {`../User/Profile`}
-                              className={currentUser && br.name.includes('Owner')? "btn btn-info float-end my-2" : "d-none"}>
-                                Manage Profile
+                            <Link to = {currentUser && `/Details/${currentUser._id}/${br._id}`}
+                              className={br.name.includes('Owner')? "btn btn-info float-end my-2" : "d-none"}>
+                                Manage Details
                             </Link>
                             <textarea placeholder='add comments....' value={review.comments} 
                               className={br._id == currentID? "border form-control" : "d-none"}
@@ -291,7 +320,9 @@ function Home() {
                   if(usr) {
                     return (
                       <span className='py-2 text-warning me-2 p-2'><FaSmile/> {cm.comments} 
-                      <Link className='text-danger text-decoration-none' to = {`../User/Profile/${usr._id}`}> @ {usr.username}</Link></span>
+                      <button className='btn btn-outline-light rounded- 5 text-danger text-decoration-none' 
+                      onClick={() => checkComment(usr._id)}
+                        > @ {usr.username}</button></span>
                     );}})   
                     }       
             </li>))
