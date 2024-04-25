@@ -1,6 +1,7 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
+import { setCurrentUser } from "../reducer";
 import { Link } from "react-router-dom";
 import * as fClient from "../Follows/followClient";
 import * as client from "../client"
@@ -10,36 +11,54 @@ export default function PublicProfile() {
   const { profileId } = useParams();
   const { currentUser } = useSelector((state) => state.userReducer);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [user, setUser] = useState({});
   const [follows, setFollows] = useState([]);
   const [foNumber, setFoNumber] = useState(0);
   const [ferNumber, setFerNumber] = useState(0);
 
+  const fetchProfile = async () => {
+    try {
+      const account = await client.profile();
+      const user = await client.findUserById(account._id);
+      dispatch(setCurrentUser(user));
+      if (user) {
+        if (profileId === user._id) {
+          alert("This is a self page, navigating back to Profile...")
+          navigate("/User/Profile");
+          return;
+        }
+        const cur = await client.findUserById(profileId);
+        setUser(cur);
+        const fos = await fClient.findFollowsOfAUser(user._id);
+        const follows = await fClient.followsNumber(profileId);
+        const followers = await fClient.followersNumber(profileId);
+        setFoNumber(follows)
+        setFerNumber(followers)
+        setFollows(fos); 
+      } else {
+      navigate("/User/Profile")
+    }
+    } catch (err) {
+      navigate("/User/Profile")
+    }
+  }
+
   const fetchFollows = async () => {
     try {
+      if (currentUser) {
       const fos = await fClient.findFollowsOfAUser(currentUser._id);
       const follows = await fClient.followsNumber(profileId);
       const followers = await fClient.followersNumber(profileId);
       setFoNumber(follows)
       setFerNumber(followers)
       setFollows(fos);
-    } catch (err) {
+    } else {
       navigate("/User/Profile")
     }
-  }
-
-  const fetchUser = async () => {
-    try {
-      if (profileId === currentUser._id) {
-        navigate("/User/Profile");
-        return;
-      }
-      const cur = await client.findUserById(profileId);
-      setUser(cur);
     } catch (err) {
-      console.error(err.response.data.message);
-      navigate("/User/Profile");
+      navigate("/User/Profile")
     }
   }
 
@@ -74,8 +93,7 @@ export default function PublicProfile() {
   }
 
   useEffect(() => {
-    fetchUser();
-    fetchFollows();
+    fetchProfile();
   }, [profileId]);
 
   return (
@@ -98,7 +116,7 @@ export default function PublicProfile() {
         </div>
 
         <div className="card-body">
-        {following() && (currentUser._id !== user._id) ? (
+        {following() && currentUser && (currentUser._id !== user._id) ? (
             <button onClick={unfollowUser} className="btn bg-danger-subtle form-control">
               Unfollow
             </button>

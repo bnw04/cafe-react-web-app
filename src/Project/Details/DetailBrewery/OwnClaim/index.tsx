@@ -1,17 +1,34 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ProjectState } from "../../../store";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
-import * as client from "./client";
+import * as client from "./claimClient";
+import * as userClient from "../../../User/client";
+import { setCurrentUser } from "../../../User/reducer";
 
 export default function OwnerClaim() {
 
   const { detailId } = useParams();
   const { currentUser } = useSelector((state: ProjectState) => state.userReducer);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [error, setError] = useState("");
   const [brew, setBrew] = useState({id: "", name: "", website_url: ""});
-  const [claim, setClaim] = useState({owner: "", brewery_ref: detailId, legalName: "", additional: "", completed: false});
+  const [claim, setClaim] = useState({owner: "", brewery_ref: detailId, brewery_name: "", legalName: "", additional: "", completed: false, approved: false});
+
+  const fetchProfile = async() => {
+    try {
+    const account = await userClient.profile();
+    const user = await userClient.findUserById(account._id);
+    dispatch(setCurrentUser(user))
+    if (!user || user.role !== "OWNER") {
+      alert("Not authorized to see this page")
+      navigate("/User/Profile")
+    }
+  } catch (err) {
+    navigate("/User/Profile")
+  }
+  }
 
   const submit = async () => {
     try {
@@ -31,25 +48,24 @@ export default function OwnerClaim() {
       const data = await response.json();
       if (!data) {
         navigate("/Search")
-      }
-      if (!currentUser || currentUser.role !== "OWNER") {
-        navigate("/Search")
         return;
       }
       setBrew(data);
+      setClaim(c => ({...c, brewery_name: data.name}));
     };
 
     const update = async () => {
       if (currentUser) {
         setClaim({...claim, owner: currentUser._id})
-        const claims = await client.findPendingClaims(currentUser._id);
-        if (claims.length > 0) {
+        const c = await client.findPendingClaim(currentUser._id);
+        if (c) {
           alert("You have a pending request, resubmit when it's completed")
           navigate("/Search")
           return;
         }
       }
     }
+    fetchProfile();
     fetchBrewery();
     update();
   }, [detailId]);

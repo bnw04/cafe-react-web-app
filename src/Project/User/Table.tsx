@@ -3,8 +3,10 @@ import * as client from "./client";
 import { User } from "./client";
 import { BsFillCheckCircleFill, BsPencil,
   BsTrash3Fill, BsPlusCircleFill } from "react-icons/bs";
+import { useNavigate, useParams } from "react-router";
 
 export default function UserTable() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User>({
     _id: "", username: "", password: "", firstName: "", lastName: "", email: "", role: "USER" });
@@ -42,7 +44,7 @@ export default function UserTable() {
   const updateUser = async () => {
     try {
       if (!user._id) {
-        throw new Error("select an user to update first")
+        throw new Error("first, select an user to update")
       }
       const status = await client.adminUpdateUser(user._id, user);
       setUsers(users.map((u) =>
@@ -69,21 +71,47 @@ export default function UserTable() {
     const users = await client.findAllUsers();
     setUsers(users);
   };
-  useEffect(() => { fetchUsers(); }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const account = await client.profile();
+      const user = await client.findUserById(account._id);
+      if (!user || user.role !== "ADMIN") {
+        alert("Not authorized to see this page")
+        navigate("/User/Profile")
+      }
+    } catch (err) {
+      navigate("/User/Profile")
+    }
+  }
+
+
+  useEffect(() => {
+    fetchProfile();
+    fetchUsers(); 
+  }, []);
 
   return (
     <div className="container-fluid">
-      <select
-        onChange={(e) => fetchUsersByRole(e.target.value)}
-        value={role || "USER"}
-        className="form-select w-25 float-end mt-2">
-        <option value="USER">User</option>
-        <option value="ADMIN">Admin</option>
-        <option value="OWNER">Owner</option>
-      </select>
+      <div className="row">
 
-      <h1>User Table</h1>
-      <table className="table">
+        <div className="col">
+          <h1>User Table</h1>
+        </div>
+        <div className="col">
+          <select
+            onChange={(e) => fetchUsersByRole(e.target.value)}
+            value={role || "USER"}
+            className="form-select w-25 float-end mt-2">
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+            <option value="OWNER">Owner</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-responsive-sm">
+      <table className="table table-striped">
         <thead>
           <tr>
             <th>Username</th>
@@ -94,9 +122,9 @@ export default function UserTable() {
             <th>&nbsp;</th>
 
           </tr>
-          <tr>
+          <tr className="align-middle">
             <td>
-            <input value={user.username} className="me-2" onChange={(e) =>
+            <input value={user.username} className="me-2 mb-2" onChange={(e) =>
                 setUser({ ...user, username: e.target.value })}
                 placeholder="username"/>
             <input value={user.password} type="password" onChange={(e) =>
@@ -132,14 +160,14 @@ export default function UserTable() {
         </thead>
         <tbody>
           {users.map((user: any) => (
-            <tr key={user._id}>
+            <tr key={user._id} className="align-middle">
               <td>{user.username}</td>
               <td>{user.firstName}</td>
               <td>{user.lastName}</td>
               <td>{user.email}</td>
               <td>{user.role}</td>
               <td>
-                <button className="btn btn-danger me-2" onClick={() => deleteUser(user)}>
+                <button className="btn btn-danger me-2 mb-1" onClick={() => deleteUser(user)}>
                   <BsTrash3Fill />
                 </button>
                 <button className="btn btn-warning me-2" onClick={() => selectUser(user)}>
@@ -149,6 +177,7 @@ export default function UserTable() {
             </tr>))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
