@@ -10,7 +10,6 @@ import { FaDeleteLeft } from 'react-icons/fa6';
 import Trending from './trend';
 axios.defaults.withCredentials = true;
 
-
 function AdminHome() {
     const {pathname} = useLocation()
     const [brews, setBrews] = useState<any[]>([]);
